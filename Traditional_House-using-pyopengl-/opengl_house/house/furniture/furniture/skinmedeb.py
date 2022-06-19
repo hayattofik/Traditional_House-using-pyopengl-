@@ -1,0 +1,168 @@
+# Feito por Gabriel e Hudson
+
+import numpy as np
+import pygame
+from pygame.locals import *
+from copy import copy
+
+from OpenGL.GL import *
+from OpenGL.GLU import *
+from .base_furniture import BaseFurniture
+
+import math
+
+from ..scene import TextureLoader
+
+verticies = (
+    (1, -1, -1),  # 0
+    (1, 1, -1),  # 1
+    (-1, 1, -1),  # 2
+    (-1, -1, -1),  # 3
+
+    (1, -1, 1),  # 4
+    (1, 1, 1),  # 5
+    (-1, -1, 1),  # 6
+    (-1, 1, 1)  # 7
+)
+
+faces = (
+    # Z negativo = (0, 1, 2, 3)
+    (0, 1, 2, 3),
+    # Z positivo = (4, 5, 6, 7)
+    (4, 5, 7, 6),
+    # Y negativo = (0, 3, 4, 6)
+    (0, 3, 6, 4),
+    # Y positivo = (1, 2, 5, 7)
+    (1, 2, 7, 5),
+    # X negativo = (2, 3, 6, 7)
+    (2, 3, 6, 7),
+    # X positivo = (0, 1, 4, 5)
+    (0, 1, 5, 4)
+)
+
+normals = (
+    (0, 0, -1),
+    (0, 0, 1),
+    (0, -1, 0),
+    (0, 1, 0),
+    (-1, 0, 0),
+    (1, 0, 0),
+)
+
+face1 = (4, 5, 7, 6)  # Z Positivo
+normal1 = (0, 0, 1)  # Z Positivo
+
+face2 = (0, 1, 2, 3)  # Z Negativo
+normal2 = (0, 0, -1)  # Z Negativo
+
+face3 = (1, 2, 7, 5)  # Y Positivo
+normal3 = (0, 1, 0)  # Y Positivo
+
+face4 = (0, 3, 6, 4)  # Y Negativo
+normal4 = (0, -1, 0)  # Y Negativo
+
+face5 = (0, 1, 5, 4)  # X Positivo
+normal5 = (1, 0, 0)  # X Positivo
+
+face6 = (2, 3, 6, 7)  # X Negativo
+normal6 = (-1, 0, 0)  # X Negativo
+
+
+# segments = np.array((
+#     ((0, 0.3, 0),(0, 0, 0)),
+#     ((0, 0, 0),(0, 0, 0)),
+#     ((0, 0, 0),(0, 0, 0)),
+# ))
+
+
+def retornaNovaFace(face, normal, texture=None):
+    if not texture is None:
+        glBindTexture(GL_TEXTURE_2D, texture)
+
+    glBegin(GL_QUADS)
+    texIndexes = [(1, 0), (1, 1), (0, 1), (0, 0)]
+    glNormal3d(normal[0], normal[1], normal[2])
+    for vertex, texIndex in zip(face, texIndexes):
+        if not texture is None:
+            glTexCoord2f(texIndex[0], texIndex[1])
+        glVertex3fv(verticies[vertex])
+    glEnd()
+
+
+def retornaOsPesDoFogao(texture=None):
+    verticies = (
+        (0.1, -0.1, -0.1),  # 0
+        (0.2, 0.1, -0.1),  # 1
+        (-0.1, 0.1, -0.1),  # 2
+        (-0.1, -0.1, -0.1),  # 3
+
+        (0.1, -0.1, 0.1),  # 4
+        (0.2, 0.1, 0.1),  # 5
+        (-0.1, -0.1, 0.1),  # 6
+        (-0.1, 0.1, 0.1)  # 7
+    )
+
+    if not texture is None:
+        glBindTexture(GL_TEXTURE_2D, texture)
+
+    glBegin(GL_QUADS)
+    for face, normal in zip(faces, normals):
+        glNormal3d(normal[0], normal[1], normal[2])
+        for vertex in face:
+            glVertex3fv(verticies[vertex])
+    glEnd()
+
+
+
+
+class skinmedeb(BaseFurniture):
+    translate = [22, -12, -6]
+    scale = (0.7, 0.3, 2)
+    rotate = (270, 0, 1, 0)
+
+    def __init__(self, texture_loader: TextureLoader, init_x=0.0, init_y=0.0, init_z=0.0, init_rotate_x=0.0, init_rotate_y=0.0,init_rotate_z=0.0, init_angle_rotate=0.0):
+        super().__init__(texture_loader)
+        self.tx = init_x
+        self.ty = init_y
+        self.tz = init_z
+
+        self.rotate_x = init_rotate_x
+        self.rotate_y = init_rotate_y
+        self.rotate_z = init_rotate_z
+        self.angle_rotate = init_angle_rotate
+
+        self.diff_x = init_x
+        self.diff_z = init_z
+        self.wireframe = False
+        self.texture = True
+        self.m_cubeAngle = 0.0
+
+        self.fogaoTextura = [None, None, None, None, None, None, None, None]
+        self.fogaoTextura[0] = self.texture_loader.load_texture('skin.jpg')
+        self.fogaoTextura[1] = self.texture_loader.load_texture('skin.jpg')
+        self.fogaoTextura[2] = self.texture_loader.load_texture('skin.jpg')
+        self.fogaoTextura[3] = self.texture_loader.load_texture('skin.jpg')
+        self.fogaoTextura[4] = self.texture_loader.load_texture('skin.jpg')
+        self.fogaoTextura[5] = self.texture_loader.load_texture('skin.jpg')
+        self.fogaoTextura[6] = self.texture_loader.load_texture('skin.jpg')
+        self.fogaoTextura[7] = self.texture_loader.load_texture('skin.jpg')
+
+    def draw_on_scene(self):
+        glScalef(*self.scale)
+        glTranslate(*self.translate)
+        glRotatef(*self.rotate)
+        glColor3f(1, 1, 1)
+
+
+
+
+        glPushMatrix()
+        glTranslatef(0, 0, 0.)  # faces for the midija
+        retornaNovaFace(face1, normal1, self.fogaoTextura[0])
+        retornaNovaFace(face2, normal2, self.fogaoTextura[1])
+        retornaNovaFace(face3, normal3, self.fogaoTextura[2])
+        retornaNovaFace(face4, normal4, self.fogaoTextura[3])
+        retornaNovaFace(face5, normal5, self.fogaoTextura[4])
+        retornaNovaFace(face6, normal6, self.fogaoTextura[5])
+        glPopMatrix()
+
